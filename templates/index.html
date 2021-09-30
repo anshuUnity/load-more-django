@@ -1,0 +1,96 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinite Scroll</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+        integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+        integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
+        integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV"
+        crossorigin="anonymous"></script>
+</head>
+<style>
+    .not-visible {
+        display: none;
+    }
+</style>
+
+<body>
+    <div class="container">
+        <h1>POSTS</h1>
+        <div class="content" id="content">
+            {% for post in posts %}
+            <div class="single_content border border-success mt-2 pl-2">
+                <h3>{{post.title}}</h3>
+                <p>{{post.desc}}</p>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="spinner-border text-primary mt-2 not-visible" role="status" id="spinner">
+            <span class="sr-only">Loading...</span>
+        </div>
+        <div class="load-more__btn mt-3" id="btn">
+            <button type="button" class="btn btn-success">Load More Post</button>
+        </div>
+        <div class="alert alert-danger mt-2 not-visible" role="alert" id='alert'>
+            No more post to load!!
+        </div>
+    </div>
+    {{total_obj|json_script:"json-total"}}
+    <script>
+        // var _current_item = $('.single_content').length
+        // console.log(_current_item);
+        const loadBtn = document.getElementById('btn');
+        const spinner = document.getElementById('spinner');
+        const total = JSON.parse(document.getElementById('json-total').textContent);
+        const alert = document.getElementById('alert');
+
+        function loadmorePost() {
+            var _current_item = $('.single_content').length
+            const content_container = document.getElementById("content");
+            $.ajax({
+                url: '{% url "load" %}',
+                type: 'GET',
+                data: {
+                    'offset': _current_item
+                },
+                beforeSend: function () {
+                    loadBtn.classList.add('not-visible');
+                    spinner.classList.remove('not-visible');
+                },
+                success: function (response) {
+                    const data = response.posts
+                    spinner.classList.add('not-visible')
+                    data.map(post => {
+                        console.log(post.title);
+                        content_container.innerHTML += `<div class="single_content border border-success mt-2 pl-2">
+                                                            <h3>${post.title}</h3>
+                                                            <p>${post.desc}</p>
+                                                        </div>`
+                    })
+                    if (_current_item == total) {
+                        alert.classList.remove('not-visible');
+                    } else {
+                        loadBtn.classList.remove('not-visible');
+                    }
+                },
+                error: function (err) {
+                    console.log(err);
+                },
+            });
+        }
+        loadBtn.addEventListener('click', () => {
+            loadmorePost()
+        });
+    </script>
+</body>
+
+</html>
